@@ -1,49 +1,52 @@
 package create
 
 import (
-	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
+	"io"
 	"os"
 	"path/filepath"
 )
 
-func Create(path, hashAlgorithm string) error {
+func Create(path, hashAlgorithm string, errWriter io.Writer) {
 	// Get path stat
 	stat, err := os.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) { // If it's not a "not exist" error, return it
-			return &os.PathError{
-				Op:   "stat repository path",
-				Path: path,
-				Err:  err,
-			}
+			_, _ = fmt.Fprintf(errWriter, "error getting info from path \"%s\": %s\n", path, err)
+			return
 		}
-		return create(path, hashAlgorithm) // If it's a "not exist" error, create it. Done.
+
+		// If it's a "not exist" error, create it. Done.
+		if err := create(path, hashAlgorithm); err != nil {
+			_, _ = fmt.Fprintln(errWriter, err)
+		}
+		return // Finalization successfully
 	}
 
 	// Check if it's not a dir
 	if !stat.IsDir() {
-		return errors.New("repository path must be a directory")
+		_, _ = fmt.Fprintln(errWriter, "repository path must be a directory")
+		return
 	}
 
 	// Check if dir is empty
 	list, err := utils.ListDir(path)
 	if err != nil {
-		return &os.PathError{
-			Op:   "list repository directory",
-			Path: path,
-			Err:  err,
-		}
+		_, _ = fmt.Fprintf(errWriter, "error listing repository directory (%s): %s\n", path, err)
+		return
 	}
 	if len(list) != 0 {
-		return errors.New("repository path must be empty")
+		_, _ = fmt.Fprintln(errWriter, "repository path must be empty")
+		return
 	}
 
-	return create(path, hashAlgorithm)
+	if err := create(path, hashAlgorithm); err != nil {
+		_, _ = fmt.Fprintln(errWriter, err)
+	}
 }
 
 // create creates a repository in the path provided with the algorithm provided.
@@ -52,11 +55,7 @@ func create(path, hashAlgorithm string) error {
 	// Create snapshots dir
 	snapshotsFolderPath := filepath.Join(path, repository.SnapshotsFolderName)
 	if err := os.MkdirAll(snapshotsFolderPath, pkg.DefaultDirPerm); err != nil {
-		return &os.PathError{
-			Op:   "create snapshots folder",
-			Path: snapshotsFolderPath,
-			Err:  err,
-		}
+		return fmt.Errorf("error creating snapshot folder (%s): %s", snapshotsFolderPath, err)
 	}
 
 	// Create files dir and subdirectories
@@ -64,11 +63,7 @@ func create(path, hashAlgorithm string) error {
 	for i:=0; i<=0xff; i++ {
 		subDirPath := filepath.Join(filesFolderPath, fmt.Sprintf("%02x", i))
 		if err := os.MkdirAll(subDirPath, pkg.DefaultDirPerm); err != nil {
-			return &os.PathError{
-				Op:   "create files folders",
-				Path: subDirPath,
-				Err:  err,
-			}
+			return fmt.Errorf("error creating files folders in path \"%s\": %s", subDirPath, err)
 		}
 	}
 

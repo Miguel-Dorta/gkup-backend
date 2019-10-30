@@ -1,6 +1,7 @@
 package create_test
 
 import (
+	"bytes"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/create"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
@@ -40,8 +41,11 @@ func createCases(t *testing.T) {
 
 func checkGoodCase(caseStr string, t *testing.T) {
 	path := filepath.Join(testingPath, caseStr)
-	if err := create.Create(path, "sha256"); err != nil {
-		t.Errorf("error creating case %s: %s", caseStr, err)
+	errs := bytes.NewBuffer(nil)
+
+	create.Create(path, "sha256", errs)
+	if errs.Len() != 0 {
+		t.Errorf("error creating case %s: %s", caseStr, errs.String())
 		return
 	}
 	if !isWellFormed(path) {
@@ -51,7 +55,10 @@ func checkGoodCase(caseStr string, t *testing.T) {
 
 func checkBadCase(caseStr string, t *testing.T) {
 	path := filepath.Join(testingPath, caseStr)
-	if err := create.Create(path, "sha256"); err == nil {
+	errs := bytes.NewBuffer(make([]byte, 0, 200))
+
+	create.Create(path, "sha256", errs)
+	if errs.Len() == 0 {
 		t.Errorf("not error detected in case %s", caseStr)
 	}
 }
