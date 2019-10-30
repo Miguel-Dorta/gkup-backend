@@ -1,74 +1,100 @@
 package list
 
 import (
+	"encoding/json"
 	"fmt"
+	api "github.com/Miguel-Dorta/gkup-backend/api/list"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
-	"os"
 	"path/filepath"
-	"sort"
-	"strings"
+	"regexp"
+	"strconv"
 )
 
-// List takes the repo path, list all the snapshots of that repo, and writes them in the writer
-// provided in an human-readable way or in JSON depending of the bool provided.
-func List(path string, inJson bool, writeTo io.Writer) error {
-	snapList := make([]*Snapshots, 0, 100)
-	snapshotsFolderPath := filepath.Join(path, repository.SnapshotsFolderName)
+// snapshotNameRegex is the regex that represents the filename (and its parts) of a snapshot file.
+var snapshotNameRegex = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2}).json$")
 
-	// Add snapshots with no name defined
-	noNameSnap, err := getSnapshots(snapshotsFolderPath, "")
+// List takes a repository path and prints an api/list.SnapshotList object encoded in JSON to the outWriter provided.
+// Errors will be printed to errWriter as strings separated by line-termination characters.
+func List(path string, outWriter, errWriter io.Writer) {
+	snapshots, err := getSnapshots(filepath.Join(path, repository.SnapshotsFolderName), errWriter)
 	if err != nil {
-		return fmt.Errorf("cannot get snapshots: %w", err)
+		_, _ = fmt.Fprintln(errWriter, err)
+		return
 	}
-	snapList = append(snapList, noNameSnap)
 
-	// Get file list
-	fileList, err := utils.ListDir(snapshotsFolderPath)
+	data, _ := json.Marshal(api.SnapshotList{SList: snapshots})
+	_, _ = outWriter.Write(data)
+}
+
+// getSnapshots iterates a directory and returns a list of api/list.Snapshot objects.
+// These objects will have the name of each subdirectory and will contain the times of their snapshots.
+// An additional object with name=="" will be created for the times of the snapshots in path.
+func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
+	files, err := utils.ListDir(path)
 	if err != nil {
-		return &os.PathError{
-			Op:   "list snapshots folder",
-			Path: snapshotsFolderPath,
-			Err:  err,
-		}
+		return nil, fmt.Errorf("error listing \"%s\": %w", path, err)
 	}
-	// Iterate folders to get snapshots with name
-	for _, f := range fileList {
-		if !f.IsDir() {
+	snapshots := make([]*api.Snapshot, 0, len(files))
+
+	for _, file := range files {
+		if !file.IsDir() {
 			continue
 		}
 
-		// Append snapshots
-		snap, err := getSnapshots(filepath.Join(snapshotsFolderPath, f.Name()), f.Name())
+		times, err := getTimes(filepath.Join(path, file.Name()))
 		if err != nil {
-			return fmt.Errorf("cannot get snapshots: %w", err)
+			_, _ = fmt.Fprintln(errWriter, err)
 		}
-		snapList = append(snapList, snap)
+
+		snapshots = append(snapshots, &api.Snapshot{
+			Name:  file.Name(),
+			Times: times,
+		})
 	}
 
-	// Sort result
-	sort.Slice(snapList, func(i, j int) bool {
-		iLow := strings.ToLower(snapList[i].Name)
-		jLow := strings.ToLower(snapList[j].Name)
+	noNameTimes, err := getTimes(path)
+	if err != nil {
+		panic("unexpected error: " + err.Error())
+	}
 
-		if iLow == jLow {
-			return snapList[i].Name < snapList[j].Name
+	return append(snapshots, &api.Snapshot{
+		Name:  "",
+		Times: noNameTimes,
+	}), nil
+}
+
+// getTimes iterates the provided path and returns a list of api/list.Times objects
+func getTimes(path string) ([]*api.Time, error) {
+	files, err := utils.ListDir(path)
+	if err != nil {
+		return nil, fmt.Errorf("error listing \"%s\": %w", path, err)
+	}
+
+	times := make([]*api.Time, 0, len(files))
+
+	for _, file := range files {
+		if !file.Mode().IsRegular() || !snapshotNameRegex.MatchString(file.Name()) {
+			continue
 		}
-		return iLow < jLow
-	})
 
-	// Get data formatted
-	var output []byte
-	if inJson {
-		output = getJSON(snapList)
-	} else {
-		output = getTXT(snapList)
-	}
+		dateStrs := snapshotNameRegex.FindStringSubmatch(file.Name())[1:]
+		Y, _ := strconv.Atoi(dateStrs[0])
+		M, _ := strconv.Atoi(dateStrs[1])
+		D, _ := strconv.Atoi(dateStrs[2])
+		h, _ := strconv.Atoi(dateStrs[3])
+		m, _ := strconv.Atoi(dateStrs[4])
+		s, _ := strconv.Atoi(dateStrs[5])
 
-	// Write output
-	if _, err := writeTo.Write(output); err != nil {
-		return fmt.Errorf("cannot write list to writer provided: %w", err)
+		times = append(times, &api.Time{
+			Year:   Y,
+			Month:  M,
+			Day:    D,
+			Hour:   h,
+			Minute: m,
+			Second: s,
+		})
 	}
-	return nil
+	return times, nil
 }
