@@ -3,7 +3,6 @@ package check
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/hash"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
@@ -26,7 +25,7 @@ func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer)
 	}
 
 	// Get file list
-	fileList := listFiles(filepath.Join(path, repository.FilesFolderName), errWriter)
+	fileList := listFiles(filepath.Join(path, files.FolderName), errWriter)
 	if fileList == nil || len(fileList) == 0 {
 		return
 	}

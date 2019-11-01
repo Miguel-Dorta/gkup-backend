@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	api "github.com/Miguel-Dorta/gkup-backend/api/list"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"path/filepath"
@@ -18,13 +18,13 @@ var snapshotNameRegex = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})
 // List takes a repository path and prints an api/list.SnapshotList object encoded in JSON to the outWriter provided.
 // Errors will be printed to errWriter as strings separated by line-termination characters.
 func List(path string, outWriter, errWriter io.Writer) {
-	snapshots, err := getSnapshots(filepath.Join(path, repository.SnapshotsFolderName), errWriter)
+	snapshotList, err := getSnapshots(filepath.Join(path, snapshots.FolderName), errWriter)
 	if err != nil {
 		_, _ = fmt.Fprintln(errWriter, err)
 		return
 	}
 
-	data, _ := json.Marshal(api.SnapshotList{SList: snapshots})
+	data, _ := json.Marshal(api.SnapshotList{SList: snapshotList})
 	_, _ = outWriter.Write(data)
 }
 
@@ -36,7 +36,7 @@ func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error listing \"%s\": %w", path, err)
 	}
-	snapshots := make([]*api.Snapshot, 0, len(files))
+	snapshotList := make([]*api.Snapshot, 0, len(files))
 
 	for _, file := range files {
 		if !file.IsDir() {
@@ -48,7 +48,7 @@ func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
 			_, _ = fmt.Fprintln(errWriter, err)
 		}
 
-		snapshots = append(snapshots, &api.Snapshot{
+		snapshotList = append(snapshotList, &api.Snapshot{
 			Name:  file.Name(),
 			Times: times,
 		})
@@ -59,7 +59,7 @@ func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
 		panic("unexpected error: " + err.Error())
 	}
 
-	return append(snapshots, &api.Snapshot{
+	return append(snapshotList, &api.Snapshot{
 		Name:  "",
 		Times: noNameTimes,
 	}), nil

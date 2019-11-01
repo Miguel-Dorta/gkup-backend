@@ -3,8 +3,9 @@ package create
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"os"
@@ -53,13 +54,13 @@ func Create(path, hashAlgorithm string, errWriter io.Writer) {
 // the path must exist and be an empty directory.
 func create(path, hashAlgorithm string) error {
 	// Create snapshots dir
-	snapshotsFolderPath := filepath.Join(path, repository.SnapshotsFolderName)
+	snapshotsFolderPath := filepath.Join(path, snapshots.FolderName)
 	if err := os.MkdirAll(snapshotsFolderPath, pkg.DefaultDirPerm); err != nil {
 		return fmt.Errorf("error creating snapshot folder (%s): %s", snapshotsFolderPath, err)
 	}
 
 	// Create files dir and subdirectories
-	filesFolderPath := filepath.Join(path, repository.FilesFolderName)
+	filesFolderPath := filepath.Join(path, files.FolderName)
 	for i:=0; i<=0xff; i++ {
 		subDirPath := filepath.Join(filesFolderPath, fmt.Sprintf("%02x", i))
 		if err := os.MkdirAll(subDirPath, pkg.DefaultDirPerm); err != nil {
