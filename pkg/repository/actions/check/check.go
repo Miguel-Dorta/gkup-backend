@@ -1,146 +1,105 @@
 package check
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/hash"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
-	"hash"
 	"io"
-	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 )
 
-var (
-	bufferSize int
-	jsonOutput bool
-	statusWriter, errorWriter io.Writer
-)
-
-func Check(path string, bufSize int, json bool, writeStatus, writeErrors io.Writer) error {
-	if bufSize < 512 {
-		bufSize = 512
-	}
-	bufferSize = bufSize
-	jsonOutput = json
-	statusWriter = writeStatus
-	errorWriter = writeErrors
-
-	// Get settings (will be used later)
+func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer) {
+	// Get hash algorithm
 	sett, err := settings.Read(filepath.Join(path, settings.FileName))
 	if err != nil {
-		return fmt.Errorf("error reading settings: %w", err)
+		_, _ = fmt.Fprintf(errWriter, "error reading repository settings: %s\n", err)
+		return
 	}
-
-	// Get all files
-	fileList, err := getAllFiles(path)
-	if err != nil {
-		return fmt.Errorf("error listing repository files: %w", err)
-	}
-	safeFileList := threadSafe.NewStringList(fileList)
-
-	// Do concurrent check
-	quit := make(chan bool)
-	go printStatusAsync(safeFileList, quit)
-	wg := &sync.WaitGroup{}
-	for i:=0; i<runtime.NumCPU(); i++ {
-		wg.Add(1)
-		go func() {
-			checkFilesWorker(safeFileList, sett.HashAlgorithm)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	quit <- true
-
-	return nil
-}
-
-func checkFilesWorker(safeFileList *threadSafe.StringList, hashAlgorithm string) {
-	buf := make([]byte, bufferSize)
-	h, err := getHash(hashAlgorithm)
-	if err != nil {
-		printError(err)
+	if _, exists := hash.Algorithms[sett.HashAlgorithm]; !exists {
+		_, _ = fmt.Fprintf(errWriter, "invalid hash algorithm (%s)\n", sett.HashAlgorithm)
 		return
 	}
 
+	// Get file list
+	fileList := listFiles(filepath.Join(path, repository.FilesFolderName), errWriter)
+	if fileList == nil || len(fileList) == 0 {
+		return
+	}
+
+	// Start status printer routine
+	progress := &threadSafe.Counter{}
+	quit := make(chan bool)
+	wgStatus := &sync.WaitGroup{}
+	wgStatus.Add(1)
+	go func() {
+		statusPrinter(len(fileList), progress, outWriter, quit)
+		wgStatus.Done()
+	}()
+
+	// Start file checkers
+	safeFileList := threadSafe.NewStringList(fileList)
+	wg := &sync.WaitGroup{}
+	for i:=0; i<threads; i++ {
+		wg.Add(1)
+		go func() {
+			fileChecker(safeFileList, progress, errWriter, sett.HashAlgorithm, bufferSize)
+			wg.Done()
+		}()
+	}
+
+	// Wait and close the execution
+	wg.Wait()
+	quit <- true
+	wgStatus.Wait()
+}
+
+func fileChecker(list *threadSafe.StringList, progress *threadSafe.Counter, errWriter io.Writer, hashAlgorithm string, bufferSize int) {
+	h := hash.Algorithms[hashAlgorithm]()
+	buf := make([]byte, bufferSize)
+
 	for {
-		f := safeFileList.Next()
-		if f == nil {
-			break
+		path := list.Next()
+		if path == nil {
+			return
 		}
-		if err := checkFile(*f, h, buf); err != nil {
-			printError(err)
+
+		if err := files.Check(*path, h, buf); err != nil {
+			_, _ = fmt.Fprintf(errWriter,"error checking file \"%s\": %s\n", *path, err)
+		}
+		progress.Add(1)
+	}
+}
+
+func listFiles(path string, errWriter io.Writer) []string {
+	fileList := make([]string, 0, 256)
+
+	dirs, err := utils.ListDir(path)
+	if err != nil {
+		_, _ = fmt.Fprintf(errWriter, "cannot list files directory: %s\n", err)
+		return nil
+	}
+	for _, dir := range dirs {
+		if !dir.IsDir() {
 			continue
 		}
-	}
-}
+		dirPath := filepath.Join(path, dir.Name())
 
-func checkFile(path string, h hash.Hash, buf []byte) error {
-	// Get data
-	expectedHash, expectedSize, err := files.GetDataFromName(filepath.Base(path))
-	if err != nil {
-		return &os.PathError{
-			Op:   "get data from filename",
-			Path: path,
-			Err:  err,
-		}
-	}
-
-	// Check size
-	stat, err := os.Stat(path)
-	if err != nil {
-		return fmt.Errorf("cannot access file info: %w", err)
-	}
-	if stat.Size() != expectedSize {
-		return fmt.Errorf("sizes don't match in file %s", path)
-	}
-
-	// Check hash
-	actualHash, err := hashFile(path, h, buf)
-	if err != nil {
-		return fmt.Errorf("error hashing file: %w", err)
-	}
-	if !bytes.Equal(actualHash, expectedHash) {
-		return fmt.Errorf("hashes don't match in file %s", path)
-	}
-
-	return nil
-}
-
-func getAllFiles(path string) ([]string, error) {
-	result := make([]string, 0, 10000)
-
-	filesFolderPath := filepath.Join(path, repository.FilesFolderName)
-	for i:=0; i<=0xff; i++ {
-		dirPath := filepath.Join(filesFolderPath, fmt.Sprintf("%02x", i))
-
-		// List dir
-		fList, err := utils.ListDir(dirPath)
+		fs, err := utils.ListDir(dirPath)
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
-			return nil, &os.PathError{
-				Op:   "getAllRepoFiles",
-				Path: dirPath,
-				Err:  err,
-			}
+			_, _ = fmt.Fprintf(errWriter, "error listing files in directory \"%s\": %s\n", dirPath, err)
+			continue
 		}
-
-		// Add files to list
-		for _, f := range fList {
+		for _, f := range fs {
 			if !f.Mode().IsRegular() {
 				continue
 			}
-			result = append(result, filepath.Join(dirPath, f.Name()))
+			fileList = append(fileList, filepath.Join(dirPath, f.Name()))
 		}
 	}
-	return result, nil
+	return fileList
 }
