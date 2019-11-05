@@ -32,11 +32,10 @@ func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer)
 
 	// Start status printer routine
 	progress := &threadSafe.Counter{}
-	quit := make(chan bool)
 	wgStatus := &sync.WaitGroup{}
 	wgStatus.Add(1)
 	go func() {
-		statusPrinter(len(fileList), progress, outWriter, quit)
+		statusPrinter(len(fileList), progress, outWriter)
 		wgStatus.Done()
 	}()
 
@@ -53,7 +52,6 @@ func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer)
 
 	// Wait and close the execution
 	wg.Wait()
-	quit <- true
 	wgStatus.Wait()
 }
 

@@ -8,24 +8,19 @@ import (
 	"time"
 )
 
-func statusPrinter(total int, progress *threadSafe.Counter, outWriter io.Writer, quit <-chan bool) {
+func statusPrinter(total int, progress *threadSafe.Counter, outWriter io.Writer) {
 	seconds := time.NewTicker(time.Second).C
-	for {
-		select {
-		case <-seconds:
-			printStatus(total, progress.Get(), outWriter)
-		case <-quit:
-			printStatus(total, progress.Get(), outWriter)
+	for range seconds {
+		current := progress.Get()
+
+		data, _ := json.Marshal(api.Status{
+			Current: current,
+			Total:   total,
+		})
+		_, _ = outWriter.Write(data)
+
+		if current >= total {
 			return
 		}
 	}
 }
-
-func printStatus(total int, progress int, outWriter io.Writer) {
-	data, _ := json.Marshal(api.Status{
-		Current: progress,
-		Total:   total,
-	})
-	_, _ = outWriter.Write(data)
-}
-
