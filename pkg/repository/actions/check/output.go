@@ -2,7 +2,7 @@ package check
 
 import (
 	"encoding/json"
-	api "github.com/Miguel-Dorta/gkup-backend/api/check"
+	"github.com/Miguel-Dorta/gkup-backend/api"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
 	"io"
 	"time"
@@ -23,8 +23,8 @@ func statusPrinter(total int, progress *threadSafe.Counter, outWriter io.Writer,
 
 func printStatus(total int, progress int, outWriter io.Writer) {
 	data, _ := json.Marshal(api.Status{
-		ProgressCurrent: progress,
-		ProgressTotal:   total,
+		Current: progress,
+		Total:   total,
 	})
 	_, _ = outWriter.Write(data)
 }

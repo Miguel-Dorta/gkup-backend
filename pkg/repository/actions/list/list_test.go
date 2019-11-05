@@ -3,7 +3,7 @@ package list_test
 import (
 	"bytes"
 	"encoding/json"
-	api "github.com/Miguel-Dorta/gkup-backend/api/list"
+	"github.com/Miguel-Dorta/gkup-backend/api"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/list"
 	"sort"
 	"strings"

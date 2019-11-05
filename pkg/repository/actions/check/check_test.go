@@ -3,7 +3,7 @@ package check_test
 import (
 	"bytes"
 	"encoding/json"
-	api "github.com/Miguel-Dorta/gkup-backend/api/check"
+	"github.com/Miguel-Dorta/gkup-backend/api"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/check"
 	"io"
 	"runtime"
@@ -66,8 +66,8 @@ func checkStatus(statusReader io.Reader, t *testing.T) {
 			continue
 		}
 
-		if statusJSON.ProgressTotal < statusJSON.ProgressCurrent {
-			t.Errorf("error in status: progress (%d) is greater than total (%d)", statusJSON.ProgressCurrent, statusJSON.ProgressTotal)
+		if statusJSON.Total < statusJSON.Current {
+			t.Errorf("error in status: progress (%d) is greater than total (%d)", statusJSON.Current, statusJSON.Total)
 			continue
 		}
 	}

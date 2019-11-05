@@ -1,4 +1,4 @@
-package list
+package api
 
 // SnapshotList represents a serializable list of Snapshot objects.
 type SnapshotList struct {
