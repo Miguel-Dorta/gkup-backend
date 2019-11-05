@@ -28,15 +28,15 @@ func List(path string, outWriter, errWriter io.Writer) {
 	_, _ = outWriter.Write(data)
 }
 
-// getSnapshots iterates a directory and returns a list of api/list.Snapshot objects.
+// getSnapshots iterates a directory and returns a list of api/list.Snapshots objects.
 // These objects will have the name of each subdirectory and will contain the times of their snapshots.
 // An additional object with name=="" will be created for the times of the snapshots in path.
-func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
+func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshots, error) {
 	files, err := utils.ListDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("error listing \"%s\": %w", path, err)
 	}
-	snapshotList := make([]*api.Snapshot, 0, len(files))
+	snapshotList := make([]*api.Snapshots, 0, len(files))
 
 	for _, file := range files {
 		if !file.IsDir() {
@@ -48,7 +48,7 @@ func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
 			_, _ = fmt.Fprintln(errWriter, err)
 		}
 
-		snapshotList = append(snapshotList, &api.Snapshot{
+		snapshotList = append(snapshotList, &api.Snapshots{
 			Name:  file.Name(),
 			Times: times,
 		})
@@ -59,7 +59,7 @@ func getSnapshots(path string, errWriter io.Writer) ([]*api.Snapshot, error) {
 		panic("unexpected error: " + err.Error())
 	}
 
-	return append(snapshotList, &api.Snapshot{
+	return append(snapshotList, &api.Snapshots{
 		Name:  "",
 		Times: noNameTimes,
 	}), nil

@@ -3,6 +3,7 @@ package restore
 import (
 	"errors"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/api"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
@@ -13,23 +14,11 @@ import (
 	"sync"
 )
 
-type SnapshotToRestore struct {
-	Name string
-	Time struct {
-		Year   int
-		Month  int
-		Day    int
-		Hour   int
-		Minute int
-		Second int
-	}
-}
-
 type copy struct {
 	from, to string
 }
 
-func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *SnapshotToRestore, outWriter, errWriter io.Writer) {
+func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snapshot, outWriter, errWriter io.Writer) {
 	destinyFiles, err := utils.ListDir(restorePath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -77,7 +66,7 @@ func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *Snapshot
 	wg.Wait()
 }
 
-func getSnapshot(path string, restoreSnap *SnapshotToRestore) (*snapshots.Snapshot, error) {
+func getSnapshot(path string, restoreSnap *api.Snapshot) (*snapshots.Snapshot, error) {
 	if restoreSnap.Name != "" {
 		path = filepath.Join(path, restoreSnap.Name)
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 var expectedOutput = api.SnapshotList{
-	SList: []*api.Snapshot{
+	SList: []*api.Snapshots{
 		{
 			Name: "",
 			Times: []*api.Time{
@@ -157,7 +157,7 @@ func TestList(t *testing.T) {
 	}
 }
 
-func equalsSnap(expectedSnap, actualSnap *api.Snapshot, t *testing.T) {
+func equalsSnap(expectedSnap, actualSnap *api.Snapshots, t *testing.T) {
 	if expectedSnap.Name != actualSnap.Name {
 		t.Errorf("name expected (%s) is not name found (%s)", expectedSnap.Name, actualSnap.Name)
 		return

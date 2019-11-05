@@ -1,14 +1,20 @@
 package api
 
-// SnapshotList represents a serializable list of Snapshot objects.
+// SnapshotList represents a serializable list of Snapshots objects.
 type SnapshotList struct {
-	SList []*Snapshot `json:"snapshots"`
+	SList []*Snapshots `json:"snapshots"`
 }
 
-// Snapshot represents all the snapshots taken under the same name.
-type Snapshot struct {
+// Snapshots represents all the snapshots taken under the same name.
+type Snapshots struct {
 	Name  string  `json:"name"`
 	Times []*Time `json:"times"`
+}
+
+// Snapshot represents just one snapshot.
+type Snapshot struct {
+	Name string `json:"name"`
+	Time *Time  `json:"time"`
 }
 
 // Time represents the time when a snapshot was taken.
