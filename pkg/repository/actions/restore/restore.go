@@ -57,6 +57,21 @@ func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snap
 	buf := make([]byte, bufferSize)
 	for progress = 0; progress < len(copyList); progress++ {
 		c := copyList[progress]
+
+		// Check if parent directory exists. If not, create it.
+		cParentDir := filepath.Dir(c.to)
+		_, err := os.Stat(cParentDir)
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot get info from parent directory: %s", c.to, err)
+				continue
+			}
+			if err := os.MkdirAll(cParentDir, 0755); err != nil {
+				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot create parent directory: %s", c.to, err)
+				continue
+			}
+		}
+
 		if err := utils.CopyFile(c.from, c.to, buf); err != nil {
 			_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): %s\n", c.to, err)
 			continue
@@ -90,7 +105,7 @@ func getCopyListRecursive(filesPath, relRestorePath string, d *snapshots.Directo
 		})
 	}
 	for _, subD := range d.Dirs {
-		list = append(list, getCopyListRecursive(filesPath, filepath.Join(relRestorePath, d.Name), subD)...)
+		list = append(list, getCopyListRecursive(filesPath, filepath.Join(relRestorePath, subD.Name), subD)...)
 	}
 	return list
 }

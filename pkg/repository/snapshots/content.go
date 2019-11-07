@@ -29,7 +29,7 @@ func Read(path string) (*Snapshot, error) {
 		return nil, fmt.Errorf("error reading snapshot \"%s\": %w", path, err)
 	}
 
-	var s *Snapshot
+	s := &Snapshot{}
 	if err = json.Unmarshal(data, s); err != nil {
 		return nil, fmt.Errorf("error parsing snapshot \"%s\": %w", path, err)
 	}
