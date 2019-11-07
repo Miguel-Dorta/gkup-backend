@@ -35,3 +35,11 @@ func Read(path string) (*Snapshot, error) {
 	}
 	return s, nil
 }
+
+func Write(path string, s *Snapshot) error {
+	data, _ := json.Marshal(s)
+	if err := ioutil.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("error writing snapshot (%s): %w", path, err)
+	}
+	return nil
+}
