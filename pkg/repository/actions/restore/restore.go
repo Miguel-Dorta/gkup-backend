@@ -40,7 +40,7 @@ func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snap
 
 	snap, err := getSnapshot(filepath.Join(repoPath, snapshots.FolderName), restoreSnap)
 	if err != nil {
-		_, _ = fmt.Fprintf(errWriter, "error getting snapshot: %s", err)
+		_, _ = fmt.Fprintf(errWriter, "error getting snapshot: %s\n", err)
 		return
 	}
 
@@ -63,11 +63,11 @@ func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snap
 		_, err := os.Stat(cParentDir)
 		if err != nil {
 			if !errors.Is(err, os.ErrNotExist) {
-				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot get info from parent directory: %s", c.to, err)
+				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot get info from parent directory: %s\n", c.to, err)
 				continue
 			}
 			if err := os.MkdirAll(cParentDir, 0755); err != nil {
-				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot create parent directory: %s", c.to, err)
+				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot create parent directory: %s\n", c.to, err)
 				continue
 			}
 		}
@@ -100,7 +100,7 @@ func getCopyListRecursive(filesPath, relRestorePath string, d *snapshots.Directo
 	list := make([]copy, 0, len(d.Files))
 	for _, f := range d.Files {
 		list = append(list, copy{
-			from: filepath.Join(filesPath, f.Hash[:2], f.Hash + "-" + strconv.FormatInt(f.Size, 10)),
+			from: filepath.Join(filesPath, f.Hash[:2], f.Hash+"-"+strconv.FormatInt(f.Size, 10)),
 			to:   filepath.Join(relRestorePath, f.Name),
 		})
 	}
