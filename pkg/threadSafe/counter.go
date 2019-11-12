@@ -9,8 +9,8 @@ type Counter struct {
 
 func (c *Counter)Add(i int) {
 	c.m.Lock()
-	defer c.m.Unlock()
 	c.c += i
+	c.m.Unlock()
 }
 
 func (c *Counter)Get() int {
