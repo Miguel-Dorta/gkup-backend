@@ -1,12 +1,12 @@
 package x
 
-type Encoder interface {
-	Encode(f *File) error
+type Writer interface {
+	Write(f *File) error
 	Close() error
 }
 
-type Decoder interface {
-	Decode(f *File) error
+type Reader interface {
+	ReadNext() (*File, error)
 	More() bool
 	Close() error
 }
