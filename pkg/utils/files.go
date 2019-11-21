@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // CopyFile copies a file from origin path to destiny path
@@ -39,4 +41,38 @@ func ListDir(path string) ([]os.FileInfo, error) {
 	defer f.Close()
 
 	return f.Readdir(-1)
+}
+
+// CreateWithParents is similar to os.Create() but creating the parent directories necessaries.
+func CreateWithParents(path string) (*os.File, error) {
+	parentPath := filepath.Dir(path)
+
+	parentExists, err := FileExist(parentPath)
+	if err != nil {
+		return nil, fmt.Errorf("error checking parent dir existence of file \"%s\": %w", path, err)
+	}
+
+	if !parentExists {
+		if err = os.MkdirAll(parentPath, 0755); err != nil {
+			return nil, fmt.Errorf("error creating parent dirs of file \"%s\": %w", path, err)
+		}
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, fmt.Errorf("error creating file \"%s\": %w", path, err)
+	}
+	return f, nil
+}
+
+// FileExist return whether a file exist or not. It returns an error if it cannot determine it.
+func FileExist(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
 }
