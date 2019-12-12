@@ -5,36 +5,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/x"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
-	"os"
+	"io"
 	"time"
 )
 
 type Writer struct {
-	f *os.File
+	f io.WriteCloser
 	e *json.Encoder
 }
 
-func NewWriter(repoPath, snapshotName string, t time.Time) (*Writer, error) {
-	path := formatPath(repoPath, snapshotName, formatFilename(t))
+func NewWriter(repoPath, groupName string, _ *settings.Settings, t time.Time) (*Writer, error) {
+	path := getPath(repoPath, groupName, t)
 
 	f, err := utils.CreateWithParents(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create snapshot file \"%s\": %w", path, err)
 	}
+	bufF := newFileWriter(f)
+
 	w := &Writer{
-		f: f,
-		e: json.NewEncoder(f),
+		f: bufF,
+		e: json.NewEncoder(bufF),
 	}
-	if err = w.e.Encode(&versionJSON{Version: internal.Version}); err != nil {
-		return nil, fmt.Errorf("cannot write version to snapshot file (%s): %w", path, err)
+	if err = w.e.Encode(&metadata{Version: internal.Version}); err != nil {
+		return nil, fmt.Errorf("cannot write metadata to snapshot file (%s): %w", path, err)
 	}
 	return w, nil
 }
 
 func (w *Writer) Write(f *x.File) error {
-	return w.e.Encode(&fileJSON{
+	return w.e.Encode(&file{
 		RelPath: f.RelPath,
 		Hash:    hex.EncodeToString(f.Hash),
 		Size:    f.Size,

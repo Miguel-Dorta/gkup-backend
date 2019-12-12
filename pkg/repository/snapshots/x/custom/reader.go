@@ -1,37 +1,56 @@
 package custom
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/x"
+	"io"
 	"os"
+	"time"
 )
 
 type Reader struct {
-	f *os.File
+	f io.ReadCloser
 	d *json.Decoder
 }
 
-func NewReader(repoPath, snapshotName, snapshotTime string) (*Reader, error) {
-	path := formatPath(repoPath, snapshotName, snapshotTime)
+func NewReader(repoPath, groupName string, _ *settings.Settings, t time.Time) (*Reader, error) {
+	path := getPath(repoPath, groupName, t)
 
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading snapshot file \"%s\": %w", path, err)
 	}
+	bufF := newFileReader(f)
+
 	r := &Reader{
-		f: f,
-		d: json.NewDecoder(f),
+		f: bufF,
+		d: json.NewDecoder(bufF),
 	}
-	if err = r.d.Decode(&versionJSON{}); err != nil {
-		return nil, fmt.Errorf("cannot read version from snapshot file (%s): %w", path, err)
+	if err = r.d.Decode(&metadata{}); err != nil {
+		return nil, fmt.Errorf("cannot read metadata from snapshot file (%s): %w", path, err)
 	}
 	return r, nil
 }
 
-func (r *Reader) ReadNext() (f *x.File, err error) {
-	err = r.d.Decode(f)
-	return f, err
+func (r *Reader) ReadNext() (*x.File, error) {
+	var j file
+	if err := r.d.Decode(j); err != nil {
+		return nil, fmt.Errorf("error decoding file: %w", err)
+	}
+
+	hash, err := hex.DecodeString(j.Hash)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding hash: %w", err)
+	}
+
+	return &x.File{
+		RelPath: j.RelPath,
+		Hash:    hash,
+		Size:    j.Size,
+	}, nil
 }
 
 func (r *Reader) More() bool {
