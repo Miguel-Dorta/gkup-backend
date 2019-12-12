@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/x"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"time"
@@ -36,7 +36,7 @@ func NewWriter(repoPath, groupName string, _ *settings.Settings, t time.Time) (*
 	return w, nil
 }
 
-func (w *Writer) Write(f *x.File) error {
+func (w *Writer) Write(f *snapshots.File) error {
 	return w.e.Encode(&file{
 		RelPath: f.RelPath,
 		Hash:    hex.EncodeToString(f.Hash),

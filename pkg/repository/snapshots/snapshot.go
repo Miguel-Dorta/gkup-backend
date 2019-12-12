@@ -1,9 +1,9 @@
-package x
+package snapshots
 
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/x/custom"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/custom"
 	"time"
 )
 
