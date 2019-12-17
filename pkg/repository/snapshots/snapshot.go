@@ -18,10 +18,23 @@ type Writer interface {
 	Close() error
 }
 
+type Snapshot struct {
+	Group string
+	Date int64
+}
+
 type File struct {
 	RelPath string
 	Hash []byte
 	Size int64
+}
+
+func ListSnapshots(repoPath string, s *settings.Settings) ([]Snapshot, error) {
+	switch s.SnapshotType {
+	case custom.Type:
+		return custom.List(repoPath, s)
+	}
+	return nil, fmt.Errorf("invalid snapshot type: %s", s.SnapshotType)
 }
 
 func NewReader(repoPath, groupName string, s *settings.Settings, t time.Time) (Reader, error) {

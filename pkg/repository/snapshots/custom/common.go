@@ -17,13 +17,13 @@ type file struct {
 }
 
 const (
-	Type = "custom"
-	bufferSize = 128*1024
-	snapshotsPath = "snapshots"
+	Type         = "custom"
+	bufferSize   = 128*1024
+	snapshotsDir = "snapshots"
 )
 
 func getPath(repoPath, groupName string, t time.Time) string {
-	path := filepath.Join(repoPath, snapshotsPath)
+	path := filepath.Join(repoPath, snapshotsDir)
 	if groupName != "" {
 		path = filepath.Join(path, groupName)
 	}

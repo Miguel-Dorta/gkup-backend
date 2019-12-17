@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 )
 
+// TODO check tests
+
 func Create(path string, s *settings.Settings, errWriter io.Writer) {
 	log := logger{errWriter}
 
