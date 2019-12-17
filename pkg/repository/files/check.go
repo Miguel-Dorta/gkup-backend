@@ -3,13 +3,12 @@ package files
 import (
 	"bytes"
 	"fmt"
-	hash2 "github.com/Miguel-Dorta/gkup-backend/pkg/hash"
-	"hash"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/hash"
 	"os"
 	"path/filepath"
 )
 
-func Check(path string, h hash.Hash, buf []byte) error {
+func Check(path string, h *hash.Hasher) error {
 	// Get expected values
 	expectedHash, expectedSize, err := GetDataFromName(filepath.Base(path))
 	if err != nil {
@@ -26,7 +25,7 @@ func Check(path string, h hash.Hash, buf []byte) error {
 	}
 
 	// Check hash
-	actualHash, err := hash2.HashFile(path, h, buf)
+	actualHash, err := h.HashFile(path)
 	if err != nil {
 		return fmt.Errorf("error hashing file (%s): %w", path, err)
 	}

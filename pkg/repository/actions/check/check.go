@@ -9,18 +9,24 @@ import (
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"path/filepath"
+	"runtime"
 	"sync"
 )
 
-func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer) {
+var (
+	total    int
+	progress = new(threadSafe.Counter)
+)
+
+func Check(path string, outWriter, errWriter io.Writer) {
 	// Get hash algorithm
 	sett, err := settings.Read(filepath.Join(path, settings.FileName))
 	if err != nil {
-		_, _ = fmt.Fprintf(errWriter, "error reading repository settings: %s\n", err)
+		printError(errWriter, "error reading repository settings: %s", err)
 		return
 	}
-	if _, exists := hash.Algorithms[sett.HashAlgorithm]; !exists {
-		_, _ = fmt.Fprintf(errWriter, "invalid hash algorithm (%s)\n", sett.HashAlgorithm)
+	if !hash.IsValidHashAlgorithm(sett.HashAlgorithm) {
+		printError(errWriter, "invalid hash algorithm found in settings: %s", sett.HashAlgorithm)
 		return
 	}
 
@@ -31,33 +37,31 @@ func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer)
 	}
 
 	// Start status printer routine
-	progress := &threadSafe.Counter{}
-	wgStatus := &sync.WaitGroup{}
-	wgStatus.Add(1)
+	total = len(fileList)
+	statusFinished := make(chan bool, 1)
 	go func() {
-		statusPrinter(len(fileList), progress, outWriter)
-		wgStatus.Done()
+		statusPrinter(outWriter)
+		statusFinished <- true
 	}()
 
 	// Start file checkers
 	safeFileList := threadSafe.NewStringList(fileList)
-	wg := &sync.WaitGroup{}
-	for i:=0; i<threads; i++ {
+	wg := new(sync.WaitGroup)
+	for i := 0; i < runtime.NumCPU(); i++ {
 		wg.Add(1)
 		go func() {
-			fileChecker(safeFileList, progress, errWriter, sett.HashAlgorithm, bufferSize)
+			fileChecker(safeFileList, sett, errWriter)
 			wg.Done()
 		}()
 	}
 
 	// Wait and close the execution
 	wg.Wait()
-	wgStatus.Wait()
+	<- statusFinished
 }
 
-func fileChecker(list *threadSafe.StringList, progress *threadSafe.Counter, errWriter io.Writer, hashAlgorithm string, bufferSize int) {
-	h := hash.Algorithms[hashAlgorithm]()
-	buf := make([]byte, bufferSize)
+func fileChecker(list *threadSafe.StringList, s *settings.Settings, errWriter io.Writer) {
+	h, _ := hash.NewHasher(s)
 
 	for {
 		path := list.Next()
@@ -65,21 +69,23 @@ func fileChecker(list *threadSafe.StringList, progress *threadSafe.Counter, errW
 			return
 		}
 
-		if err := files.Check(*path, h, buf); err != nil {
-			_, _ = fmt.Fprintf(errWriter,"error checking file \"%s\": %s\n", *path, err)
+		if err := files.Check(*path, h); err != nil {
+			printError(errWriter, "error checking file \"%s\": %s", *path, err)
 		}
 		progress.Add(1)
 	}
 }
 
 func listFiles(path string, errWriter io.Writer) []string {
-	fileList := make([]string, 0, 256)
+	fileList := make([]string, 0, 1000)
 
+	path = filepath.Join(path, files.FolderName)
 	dirs, err := utils.ListDir(path)
 	if err != nil {
-		_, _ = fmt.Fprintf(errWriter, "cannot list files directory: %s\n", err)
+		printError(errWriter, "cannot list files directory: %s", err)
 		return nil
 	}
+
 	for _, dir := range dirs {
 		if !dir.IsDir() {
 			continue
@@ -88,9 +94,10 @@ func listFiles(path string, errWriter io.Writer) []string {
 
 		fs, err := utils.ListDir(dirPath)
 		if err != nil {
-			_, _ = fmt.Fprintf(errWriter, "error listing files in directory \"%s\": %s\n", dirPath, err)
+			printError(errWriter, "cannot list directory \"%s\": %s", dirPath, err)
 			continue
 		}
+
 		for _, f := range fs {
 			if !f.Mode().IsRegular() {
 				continue
@@ -99,4 +106,8 @@ func listFiles(path string, errWriter io.Writer) []string {
 		}
 	}
 	return fileList
+}
+
+func printError(w io.Writer, format string, a ...interface{}) {
+	_, _ = fmt.Fprintf(w, format+"\n", a...)
 }

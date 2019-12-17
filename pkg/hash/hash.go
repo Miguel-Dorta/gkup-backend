@@ -18,29 +18,30 @@ type Hasher struct {
 	buf []byte
 }
 
-func NewHasher(s *settings.Settings) (*Hasher, error) {
-	hasher := &Hasher{
-		buf: make([]byte, s.BufferSize),
-	}
+var algorithms = map[string]func() hash.Hash{
+	"md5": md5.New,
+	"sha1": sha1.New,
+	"sha256": sha256.New,
+	"sha512": sha512.New,
+	"sha3-256": sha3.New256,
+	"sha3-512": sha3.New512,
+}
 
-	switch s.HashAlgorithm {
-	case "md5":
-		hasher.h = md5.New()
-	case "sha1":
-		hasher.h = sha1.New()
-	case "sha256":
-		hasher.h = sha256.New()
-	case "sha512":
-		hasher.h = sha512.New()
-	case "sha3-256":
-		hasher.h = sha3.New256()
-	case "sha3-512":
-		hasher.h = sha3.New512()
-	default:
+func NewHasher(s *settings.Settings) (*Hasher, error) {
+	h, ok := algorithms[s.HashAlgorithm]
+	if !ok {
 		return nil, fmt.Errorf("invalid hash algorithm: %s", s.HashAlgorithm)
 	}
 
-	return hasher, nil
+	return &Hasher{
+		h:   h(),
+		buf: make([]byte, s.BufferSize),
+	}, nil
+}
+
+func IsValidHashAlgorithm(s string) bool {
+	_, ok := algorithms[s]
+	return ok
 }
 
 func (h *Hasher) HashFile(path string) ([]byte, error) {

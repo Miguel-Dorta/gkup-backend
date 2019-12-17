@@ -3,12 +3,11 @@ package check
 import (
 	"encoding/json"
 	"github.com/Miguel-Dorta/gkup-backend/api"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
 	"io"
 	"time"
 )
 
-func statusPrinter(total int, progress *threadSafe.Counter, outWriter io.Writer) {
+func statusPrinter(outWriter io.Writer) {
 	seconds := time.NewTicker(time.Second).C
 	for range seconds {
 		current := progress.Get()
