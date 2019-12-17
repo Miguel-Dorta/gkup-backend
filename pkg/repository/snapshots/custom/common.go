@@ -18,7 +18,6 @@ type file struct {
 
 const (
 	Type         = "custom"
-	bufferSize   = 128*1024
 	snapshotsDir = "snapshots"
 )
 

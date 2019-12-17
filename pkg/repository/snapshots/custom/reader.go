@@ -16,14 +16,14 @@ type Reader struct {
 	d *json.Decoder
 }
 
-func NewReader(repoPath, groupName string, _ *settings.Settings, t time.Time) (*Reader, error) {
+func NewReader(repoPath, groupName string, s *settings.Settings, t time.Time) (*Reader, error) {
 	path := getPath(repoPath, groupName, t)
 
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading snapshot file \"%s\": %w", path, err)
 	}
-	bufF := newFileReader(f)
+	bufF := newFileReader(f, s.BufferSize)
 
 	r := &Reader{
 		f: bufF,

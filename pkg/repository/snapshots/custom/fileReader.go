@@ -11,7 +11,7 @@ type fileReader struct {
 	c io.Closer
 }
 
-func newFileReader(f *os.File) *fileReader {
+func newFileReader(f *os.File, bufferSize int) *fileReader {
 	return &fileReader{
 		r: bufio.NewReaderSize(f, bufferSize),
 		c: f,

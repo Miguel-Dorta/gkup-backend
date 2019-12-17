@@ -1,6 +1,7 @@
 package create
 
 import (
+	"github.com/Miguel-Dorta/gkup-backend/internal"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
@@ -11,7 +12,7 @@ import (
 
 // TODO check tests
 
-func Create(path string, s *settings.Settings, errWriter io.Writer) {
+func Create(path string, errWriter io.Writer) {
 	log := logger{errWriter}
 
 	// Check existence
@@ -44,7 +45,19 @@ func Create(path string, s *settings.Settings, errWriter io.Writer) {
 	}
 
 	// Create settings
-	if err := settings.Write(filepath.Join(path, settings.FileName), s); err != nil {
+	if err := settings.Write(filepath.Join(path, settings.FileName), &settings.Settings{
+		Version:       internal.Version,
+		BufferSize:    128 * 1024,
+		HashAlgorithm: "sha256",
+		SnapshotType:  "custom",
+		DB: settings.DB{
+			Host:   "localhost",
+			DBName: "gkup",
+			User:   "user",
+			Pass:   "pass",
+			Port:   3306,
+		},
+	}); err != nil {
 		log.errorf("error creating settings file: %s", err)
 		return
 	}

@@ -17,14 +17,14 @@ type Writer struct {
 	e *json.Encoder
 }
 
-func NewWriter(repoPath, groupName string, _ *settings.Settings, t time.Time) (*Writer, error) {
+func NewWriter(repoPath, groupName string, s *settings.Settings, t time.Time) (*Writer, error) {
 	path := getPath(repoPath, groupName, t)
 
 	f, err := utils.CreateWithParents(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create snapshot file \"%s\": %w", path, err)
 	}
-	bufF := newFileWriter(f)
+	bufF := newFileWriter(f, s.BufferSize)
 
 	w := &Writer{
 		f: bufF,

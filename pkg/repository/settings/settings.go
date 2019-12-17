@@ -14,6 +14,7 @@ const FileName = "settings.toml"
 
 type Settings struct {
 	Version       string `toml:"version"`
+	BufferSize    int    `toml:"buffer_size"`
 	HashAlgorithm string `toml:"hash_algorithm"`
 	SnapshotType  string `toml:"snapshot_type"`
 	DB            DB     `toml:"database"`

@@ -11,7 +11,7 @@ type fileWriter struct {
 	c io.Closer
 }
 
-func newFileWriter(f *os.File) *fileWriter {
+func newFileWriter(f *os.File, bufferSize int) *fileWriter {
 	return &fileWriter{
 		w: bufio.NewWriterSize(f, bufferSize),
 		c: f,
