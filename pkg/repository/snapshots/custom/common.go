@@ -22,6 +22,8 @@ const (
 	snapshotsDir = "snapshots"
 )
 
+// TODO make tests
+
 func getPath(repoPath, groupName string, t time.Time) string {
 	path := filepath.Join(repoPath, snapshotsDir)
 	if groupName != "" {

@@ -3,16 +3,14 @@ package custom
 import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"time"
 )
 
-func List(repoPath string, _ *settings.Settings) ([]snapshots.Snapshot, error) {
+func List(repoPath string, _ *settings.Settings) (map[string][]int64, error) {
 	snapshotsPath := filepath.Join(repoPath, snapshotsDir)
 	list, err := utils.ListDir(snapshotsPath)
 	if err != nil {
@@ -21,9 +19,8 @@ func List(repoPath string, _ *settings.Settings) ([]snapshots.Snapshot, error) {
 	return getSnapshots(filepath.Join(repoPath, snapshotsDir), list), nil
 }
 
-func getSnapshots(snapshotsPath string, list []os.FileInfo) []snapshots.Snapshot {
-	snapList := make([]snapshots.Snapshot, 0, len(list))
-	noGroupSnaps := make([]os.FileInfo, 0, len(list))
+func getSnapshots(snapshotsPath string, list []os.FileInfo) map[string][]int64 {
+	snaps := make(map[string][]int64, len(list))
 
 	for _, f := range list {
 		if f.IsDir() {
@@ -31,24 +28,21 @@ func getSnapshots(snapshotsPath string, list []os.FileInfo) []snapshots.Snapshot
 			if err != nil {
 				continue
 			}
-			snapList = append(snapList, getGroupSnapshots(f.Name(), subList)...)
+			snaps[f.Name()] = getTimes(subList)
 		} else if f.Mode().IsRegular() {
-			noGroupSnaps = append(noGroupSnaps, f)
+			t := getDateFromFilename(f.Name())
+			if t == nil {
+				continue
+			}
+			snaps[""] = append(snaps[""], t.Unix())
 		}
 	}
 
-	snapList = append(snapList, getGroupSnapshots("", noGroupSnaps)...)
-	sort.Slice(snapList, func(i, j int) bool {
-		if snapList[i].Group != snapList[j].Group {
-			return snapList[i].Group < snapList[j].Group
-		}
-		return snapList[i].Date < snapList[j].Date
-	})
-	return snapList
+	return snaps
 }
 
-func getGroupSnapshots(groupName string, list []os.FileInfo) []snapshots.Snapshot {
-	snapList := make([]snapshots.Snapshot, 0, len(list))
+func getTimes(list []os.FileInfo) []int64 {
+	times := make([]int64, 0, len(list))
 
 	for _, f := range list {
 		if !f.Mode().IsRegular() {
@@ -60,13 +54,9 @@ func getGroupSnapshots(groupName string, list []os.FileInfo) []snapshots.Snapsho
 			continue
 		}
 
-		snapList = append(snapList, snapshots.Snapshot{
-			Group: groupName,
-			Date:  t.Unix(),
-		})
+		times = append(times, t.Unix())
 	}
-
-	return snapList
+	return times
 }
 
 func getDateFromFilename(name string) *time.Time {
