@@ -24,6 +24,14 @@ type File struct {
 	Size int64
 }
 
+func IsValidType(s string) bool {
+	switch s {
+	case custom.Type:
+		return true
+	}
+	return false
+}
+
 func List(repoPath string, s *settings.Settings) (map[string][]int64, error) {
 	switch s.SnapshotType {
 	case custom.Type:
