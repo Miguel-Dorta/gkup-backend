@@ -11,7 +11,7 @@ type metadata struct {
 }
 
 type file struct {
-	RelPath string `json:"relative-path"`
+	RelativePath string `json:"relative-path"`
 	Hash    string `json:"hash"`
 	Size    int64  `json:"size"`
 }

@@ -2,26 +2,21 @@ package snapshots
 
 import (
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/custom"
 	"time"
 )
 
 type Reader interface {
-	ReadNext() (*File, error)
+	ReadNext() (*files.File, error)
 	More() bool
 	Close() error
 }
 
 type Writer interface {
-	Write(f *File) error
+	Write(f *files.File) error
 	Close() error
-}
-
-type File struct {
-	RelPath string
-	Hash []byte
-	Size int64
 }
 
 func IsValidType(s string) bool {

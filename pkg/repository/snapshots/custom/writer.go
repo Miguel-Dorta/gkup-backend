@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"time"
@@ -36,11 +36,11 @@ func NewWriter(repoPath, groupName string, s *settings.Settings, t time.Time) (*
 	return w, nil
 }
 
-func (w *Writer) Write(f *snapshots.File) error {
+func (w *Writer) Write(f *files.File) error {
 	return w.e.Encode(&file{
-		RelPath: f.RelPath,
-		Hash:    hex.EncodeToString(f.Hash),
-		Size:    f.Size,
+		RelativePath: f.RelativePath,
+		Hash:         hex.EncodeToString(f.Hash),
+		Size:         f.Size,
 	})
 }
 

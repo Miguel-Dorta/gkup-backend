@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"io"
 	"os"
 	"time"
@@ -35,7 +35,7 @@ func NewReader(repoPath, groupName string, s *settings.Settings, t time.Time) (*
 	return r, nil
 }
 
-func (r *Reader) ReadNext() (*snapshots.File, error) {
+func (r *Reader) ReadNext() (*files.File, error) {
 	var j file
 	if err := r.d.Decode(j); err != nil {
 		return nil, fmt.Errorf("error decoding file: %w", err)
@@ -46,10 +46,10 @@ func (r *Reader) ReadNext() (*snapshots.File, error) {
 		return nil, fmt.Errorf("error decoding hash: %w", err)
 	}
 
-	return &snapshots.File{
-		RelPath: j.RelPath,
-		Hash:    hash,
-		Size:    j.Size,
+	return &files.File{
+		RelativePath: j.RelativePath,
+		Hash:         hash,
+		Size:         j.Size,
 	}, nil
 }
 
