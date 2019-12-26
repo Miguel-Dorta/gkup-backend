@@ -12,7 +12,7 @@ import (
 func Add(filesDirPath, filePath string, f *File, copyBuf []byte) error {
 	destination := filepath.Join(filesDirPath, getSavingPath(f.Hash, f.Size))
 
-	exists, err := utils.FileExist(destination)
+	exists, err := fileutils.FileExist(destination)
 	if err != nil {
 		return fmt.Errorf("error checking file existence: %s", err)
 	}
@@ -21,14 +21,14 @@ func Add(filesDirPath, filePath string, f *File, copyBuf []byte) error {
 		return nil
 	}
 
-	if err := utils.CopyFile(filePath, destination, copyBuf); err != nil {
+	if err := fileutils.CopyFile(filePath, destination, copyBuf); err != nil {
 		return fmt.Errorf("error copying file (%s) to repository: %s", filePath, err)
 	}
 	return nil
 }
 
 func Restore(filesPath, restorationPath string, f *File, copyBuf []byte) error {
-	return utils.CopyFile(
+	return fileutils.CopyFile(
 		filepath.Join(filesPath, getSavingPath(f.Hash, f.Size)),
 		filepath.Join(restorationPath, filepath.FromSlash(f.RelativePath)),
 		copyBuf,
@@ -38,7 +38,7 @@ func Restore(filesPath, restorationPath string, f *File, copyBuf []byte) error {
 func List(filesPath string) ([]string, error) {
 	fileList := make([]string, 0, 1000)
 
-	dirs, err := utils.ListDir(filesPath)
+	dirs, err := fileutils.ListDir(filesPath)
 	if err != nil {
 		return nil, fmt.Errorf("error listing files path: %s", err)
 	}
@@ -49,7 +49,7 @@ func List(filesPath string) ([]string, error) {
 		}
 		dirPath := filepath.Join(filesPath, dir.Name())
 
-		files, err := utils.ListDir(dirPath)
+		files, err := fileutils.ListDir(dirPath)
 		if err != nil {
 			return nil, fmt.Errorf("error listing file directory \"%s\": %s", dirPath, err)
 		}

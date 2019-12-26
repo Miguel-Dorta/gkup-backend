@@ -31,11 +31,3 @@ func (l *StringList) Next() *string {
 
 	return s
 }
-
-func (l *StringList) GetPosUnsafe() int {
-	return l.pos
-}
-
-func (l *StringList) GetLenUnsafe() int {
-	return len(l.list)
-}

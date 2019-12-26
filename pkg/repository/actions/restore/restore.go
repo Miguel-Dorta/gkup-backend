@@ -75,7 +75,7 @@ func restoreFiles(l []*files.File, repoPath, restorationPath string, errWriter i
 }
 
 func checkRestorationPath(path string) error {
-	list, err := utils.ListDir(path)
+	list, err := fileutils.ListDir(path)
 	if err == nil {
 		if len(list) != 0 {
 			return errors.New("restoration path is not empty")

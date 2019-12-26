@@ -39,7 +39,7 @@ func listFiles(paths []string, errWriter io.Writer) []*file {
 }
 
 func listFilesRecursive(pathReal, pathRelative string, errWriter io.Writer) []*file {
-	list, err := utils.ListDir(pathReal)
+	list, err := fileutils.ListDir(pathReal)
 	if err != nil {
 		printError(errWriter, "error listing directory \"%s\": %s", pathReal, err)
 		return nil

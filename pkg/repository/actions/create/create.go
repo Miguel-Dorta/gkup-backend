@@ -1,6 +1,7 @@
 package create
 
 import (
+	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
@@ -13,34 +14,32 @@ import (
 // TODO check tests
 
 func Create(path string, errWriter io.Writer) {
-	log := logger{errWriter}
-
 	// Check existence
-	if exists, err := utils.FileExist(path); err != nil {
-		log.errorf("error checking existence of path \"%s\": %s", path, err)
+	if exists, err := fileutils.FileExist(path); err != nil {
+		printError(errWriter, "error checking existence of path \"%s\": %s", path, err)
 		return
 	} else if !exists {
 		if err := os.MkdirAll(path, pkg.DefaultDirPerm); err != nil {
-			log.errorf("error creating repo directory in path \"%s\": %s", path, err)
+			printError(errWriter, "error creating repo directory in path \"%s\": %s", path, err)
 			return
 		}
 	}
 
 	// Check if it's not a dir
 	if stat, err := os.Stat(path); err != nil {
-		log.errorf("cannot get information from path \"%s\": %s", path, err)
+		printError(errWriter, "cannot get information from path \"%s\": %s", path, err)
 		return
 	} else if !stat.IsDir() {
-		log.errorf("repository path must be a directory")
+		printError(errWriter, "repository path must be a directory")
 		return
 	}
 
 	// Check if dir is empty
-	if list, err := utils.ListDir(path); err != nil {
-		log.errorf("error listing repository directory (%s): %s\n", path, err)
+	if list, err := fileutils.ListDir(path); err != nil {
+		printError(errWriter, "error listing repository directory (%s): %s\n", path, err)
 		return
 	} else if len(list) != 0 {
-		log.errorf("repository path must be empty")
+		printError(errWriter, "repository path must be empty")
 		return
 	}
 
@@ -58,7 +57,11 @@ func Create(path string, errWriter io.Writer) {
 			Port:   3306,
 		},
 	}); err != nil {
-		log.errorf("error creating settings file: %s", err)
+		printError(errWriter, "error creating settings file: %s", err)
 		return
 	}
+}
+
+func printError(w io.Writer, format string, a ...interface{}) {
+	_, _ = fmt.Fprintf(w, format + "\n", a...)
 }

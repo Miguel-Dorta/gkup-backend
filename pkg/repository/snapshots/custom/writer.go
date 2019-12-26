@@ -19,7 +19,7 @@ type Writer struct {
 func NewWriter(repoPath, groupName string, t int64, s *settings.Settings) (*Writer, error) {
 	path := getPath(repoPath, groupName, t)
 
-	f, err := utils.CreateWithParents(path)
+	f, err := fileutils.CreateWithParents(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create snapshot file \"%s\": %w", path, err)
 	}

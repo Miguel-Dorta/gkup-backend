@@ -12,7 +12,7 @@ import (
 
 func List(repoPath string, _ *settings.Settings) (map[string][]int64, error) {
 	snapshotsPath := filepath.Join(repoPath, snapshotsDir)
-	list, err := utils.ListDir(snapshotsPath)
+	list, err := fileutils.ListDir(snapshotsPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list snapshot dir (%s): %s", snapshotsPath, err)
 	}
@@ -24,7 +24,7 @@ func getSnapshots(snapshotsPath string, list []os.FileInfo) map[string][]int64 {
 
 	for _, f := range list {
 		if f.IsDir() {
-			subList, err := utils.ListDir(filepath.Join(snapshotsPath, f.Name()))
+			subList, err := fileutils.ListDir(filepath.Join(snapshotsPath, f.Name()))
 			if err != nil {
 				continue
 			}
