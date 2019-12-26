@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"os"
 	"path/filepath"
@@ -63,5 +63,5 @@ func Create(path string, errWriter io.Writer) {
 }
 
 func printError(w io.Writer, format string, a ...interface{}) {
-	_, _ = fmt.Fprintf(w, format + "\n", a...)
+	_, _ = fmt.Fprintf(w, format+"\n", a...)
 }

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/internal"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 )
 

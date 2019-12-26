@@ -1,8 +1,8 @@
 package backup
 
 import (
+	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"os"
 	pathPkg "path"

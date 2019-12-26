@@ -3,8 +3,8 @@ package files
 import (
 	"bytes"
 	"fmt"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/hash"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"os"
 	"path/filepath"
 )

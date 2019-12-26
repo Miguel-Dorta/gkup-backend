@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/hash"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/hash/checkHash"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/custom"
 	"github.com/pelletier/go-toml"
@@ -80,7 +80,7 @@ func check(s *Settings) error {
 		return errors.New("buffer_size is too small or nonexistent")
 	}
 
-	if !hash.IsValidHashAlgorithm(s.HashAlgorithm) {
+	if !checkHash.ValidAlgorithm(s.HashAlgorithm) {
 		return errors.New("invalid or nonexistent hash_algorithm")
 	}
 
