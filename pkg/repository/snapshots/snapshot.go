@@ -5,7 +5,6 @@ import (
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/custom"
-	"time"
 )
 
 type Reader interface {
@@ -35,18 +34,18 @@ func List(repoPath string, s *settings.Settings) (map[string][]int64, error) {
 	return nil, fmt.Errorf("invalid snapshot type: %s", s.SnapshotType)
 }
 
-func NewReader(repoPath, groupName string, s *settings.Settings, t time.Time) (Reader, error) {
+func NewReader(repoPath, groupName string, t int64, s *settings.Settings) (Reader, error) {
 	switch s.SnapshotType {
 	case custom.Type:
-		return custom.NewReader(repoPath, groupName, s, t)
+		return custom.NewReader(repoPath, groupName, t, s)
 	}
 	return nil, fmt.Errorf("invalid snapshot type: %s", s.SnapshotType)
 }
 
-func NewWriter(repoPath, groupName string, s *settings.Settings, t time.Time) (Writer, error) {
+func NewWriter(repoPath, groupName string, t int64, s *settings.Settings) (Writer, error) {
 	switch s.SnapshotType {
 	case custom.Type:
-		return custom.NewWriter(repoPath, groupName, s, t)
+		return custom.NewWriter(repoPath, groupName, t, s)
 	}
 	return nil, fmt.Errorf("invalid snapshot type: %s", s.SnapshotType)
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
-	"time"
 )
 
 type Writer struct {
@@ -17,7 +16,7 @@ type Writer struct {
 	e *json.Encoder
 }
 
-func NewWriter(repoPath, groupName string, s *settings.Settings, t time.Time) (*Writer, error) {
+func NewWriter(repoPath, groupName string, t int64, s *settings.Settings) (*Writer, error) {
 	path := getPath(repoPath, groupName, t)
 
 	f, err := utils.CreateWithParents(path)

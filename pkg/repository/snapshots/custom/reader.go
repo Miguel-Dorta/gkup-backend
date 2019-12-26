@@ -8,7 +8,6 @@ import (
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"io"
 	"os"
-	"time"
 )
 
 type Reader struct {
@@ -16,7 +15,7 @@ type Reader struct {
 	d *json.Decoder
 }
 
-func NewReader(repoPath, groupName string, s *settings.Settings, t time.Time) (*Reader, error) {
+func NewReader(repoPath, groupName string, t int64, s *settings.Settings) (*Reader, error) {
 	path := getPath(repoPath, groupName, t)
 
 	f, err := os.Open(path)

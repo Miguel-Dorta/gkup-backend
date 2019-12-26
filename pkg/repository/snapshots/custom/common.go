@@ -23,11 +23,13 @@ const (
 
 // TODO make tests
 
-func getPath(repoPath, groupName string, t time.Time) string {
+func getPath(repoPath, groupName string, timestamp int64) string {
 	path := filepath.Join(repoPath, snapshotsDir)
 	if groupName != "" {
 		path = filepath.Join(path, groupName)
 	}
+
+	t := time.Unix(timestamp, 0).UTC()
 	return filepath.Join(path, fmt.Sprintf("%04d-%02d-%02d_%02d-%02d-%02d.gkup",
 		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
 }

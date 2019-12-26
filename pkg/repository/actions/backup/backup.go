@@ -62,7 +62,7 @@ func addFiles(l []*file, repoPath string, s *settings.Settings, status *output.S
 }
 
 func writeSnapshot(l []*file, repoPath, groupName string, s *settings.Settings, t time.Time) error {
-	w, err := snapshots.NewWriter(repoPath, groupName, s, t)
+	w, err := snapshots.NewWriter(repoPath, groupName, t.UTC().Unix(), s)
 	if err != nil {
 		return fmt.Errorf("error creating snapshot writer: %s", err)
 	}
