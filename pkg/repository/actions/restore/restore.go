@@ -3,109 +3,96 @@ package restore
 import (
 	"errors"
 	"fmt"
-	"github.com/Miguel-Dorta/gkup-backend/api"
+	"github.com/Miguel-Dorta/gkup-backend/pkg"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/output"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/utils"
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
-	"sync"
 )
 
-type copy struct {
-	from, to string
+// TODO rewrite tests
+
+func Restore(repoPath, restorationPath, snapGroup string, snapTime int64, outWriter, errWriter io.Writer) {
+	status := output.NewStatus(2, outWriter)
+	defer status.Stop()
+
+	sett, err := settings.Read(filepath.Join(repoPath, settings.FileName))
+	if err != nil {
+		printError(errWriter, "error reading repository settings: %s", err)
+		return
+	}
+
+	if err := checkRestorationPath(restorationPath); err != nil {
+		printError(errWriter, err.Error())
+		return
+	}
+
+	status.NewStep("Listing files", 0)
+	list, err := listFiles(repoPath, snapGroup, snapTime, sett)
+	if err != nil {
+		printError(errWriter, "error listing files: %s", err)
+		return
+	}
+
+	status.NewStep("Restoring files", len(list))
+	restoreFiles(list, repoPath, restorationPath, errWriter, status)
 }
 
-func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snapshot, outWriter, errWriter io.Writer) {
-	destinyFiles, err := utils.ListDir(restorePath)
+func listFiles(repoPath, snapGroup string, snapTime int64, s *settings.Settings) ([]*files.File, error) {
+	list := make([]*files.File, 0, 1000)
+
+	r, err := snapshots.NewReader(repoPath, snapGroup, snapTime, s)
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			_, _ = fmt.Fprintf(errWriter, "error listing destiny path: %s\n", err)
-			return
-		}
-
-		if err := os.MkdirAll(restorePath, 0755); err != nil {
-			_, _ = fmt.Fprintf(errWriter, "error creating destiny path: %s\n", err)
-			return
-		}
-		destinyFiles = nil
+		return nil, fmt.Errorf("error creating snapshot reader: %s", err)
 	}
+	defer r.Close()
 
-	if len(destinyFiles) != 0 {
-		_, _ = fmt.Fprintln(errWriter, "destiny path is not empty")
-		return
-	}
-
-	snap, err := getSnapshot(filepath.Join(repoPath, snapshots.FolderName), restoreSnap)
-	if err != nil {
-		_, _ = fmt.Fprintf(errWriter, "error getting snapshot: %s\n", err)
-		return
-	}
-
-	copyList := getCopyList(repoPath, restorePath, snap)
-
-	var progress int
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		statusPrinter(len(copyList), &progress, outWriter)
-		wg.Done()
-	}()
-
-	buf := make([]byte, bufferSize)
-	for progress = 0; progress < len(copyList); progress++ {
-		c := copyList[progress]
-
-		// Check if parent directory exists. If not, create it.
-		cParentDir := filepath.Dir(c.to)
-		_, err := os.Stat(cParentDir)
+	for r.More() {
+		f, err := r.ReadNext()
 		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot get info from parent directory: %s\n", c.to, err)
-				continue
-			}
-			if err := os.MkdirAll(cParentDir, 0755); err != nil {
-				_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): cannot create parent directory: %s\n", c.to, err)
-				continue
-			}
+			return nil, fmt.Errorf("error listing file: %s", err)
 		}
+		list = append(list, f)
+	}
 
-		if err := utils.CopyFile(c.from, c.to, buf); err != nil {
-			_, _ = fmt.Fprintf(errWriter, "error restoring file (%s): %s\n", c.to, err)
-			continue
+	return list, nil
+}
+
+func restoreFiles(l []*files.File, repoPath, restorationPath string, errWriter io.Writer, status *output.Status) {
+	filesPath := filepath.Join(repoPath, files.FolderName)
+	b := make([]byte, 128*1024)
+
+	for _, f := range l {
+		if err := files.Restore(filesPath, restorationPath, f, b); err != nil {
+			printError(errWriter, "error restoring file \"%s\": %s", f.RelativePath, err)
 		}
+		status.AddPart()
 	}
-
-	wg.Wait()
 }
 
-func getSnapshot(path string, restoreSnap *api.Snapshot) (*snapshots.Snapshot, error) {
-	if restoreSnap.Name != "" {
-		path = filepath.Join(path, restoreSnap.Name)
+func checkRestorationPath(path string) error {
+	list, err := utils.ListDir(path)
+	if err == nil {
+		if len(list) != 0 {
+			return errors.New("restoration path is not empty")
+		}
+		return nil
 	}
-	path = filepath.Join(path, fmt.Sprintf("%04d-%02d-%02d_%02d-%02d-%02d.json",
-		restoreSnap.Time.Year, restoreSnap.Time.Month, restoreSnap.Time.Day,
-		restoreSnap.Time.Hour, restoreSnap.Time.Minute, restoreSnap.Time.Second))
 
-	return snapshots.Read(path)
+	if !os.IsNotExist(err) {
+		return fmt.Errorf("error listing restoration path: %s", err)
+	}
+
+	if err = os.MkdirAll(path, pkg.DefaultDirPerm); err != nil {
+		return fmt.Errorf("error creating restoration path: %s", err)
+	}
+	return nil
 }
 
-func getCopyList(repoPath, restorePath string, s *snapshots.Snapshot) []copy {
-	return getCopyListRecursive(filepath.Join(repoPath, files.FolderName), restorePath, &s.Files)
-}
-
-func getCopyListRecursive(filesPath, relRestorePath string, d *snapshots.Directory) []copy {
-	list := make([]copy, 0, len(d.Files))
-	for _, f := range d.Files {
-		list = append(list, copy{
-			from: filepath.Join(filesPath, f.Hash[:2], f.Hash+"-"+strconv.FormatInt(f.Size, 10)),
-			to:   filepath.Join(relRestorePath, f.Name),
-		})
-	}
-	for _, subD := range d.Dirs {
-		list = append(list, getCopyListRecursive(filesPath, filepath.Join(relRestorePath, subD.Name), subD)...)
-	}
-	return list
+func printError(w io.Writer, format string, a ...interface{}) {
+	_, _ = fmt.Fprintf(w, format + "\n", a...)
 }

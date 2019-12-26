@@ -4,11 +4,17 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-func GetDataFromName(name string) (hash []byte, size int64, err error) {
+func getSavingPath(h []byte, size int64) string {
+	hStr := hex.EncodeToString(h)
+	return filepath.Join(hStr[:2], hStr + "-" + strconv.FormatInt(size, 10))
+}
+
+func getDataFromName(name string) (hash []byte, size int64, err error) {
 	// Get index of character '-'
 	separatorIndex := strings.IndexByte(name, '-')
 	if separatorIndex < 0 {
