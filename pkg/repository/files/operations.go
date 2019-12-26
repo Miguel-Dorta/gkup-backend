@@ -35,6 +35,32 @@ func Restore(filesPath, restorationPath string, f *File, copyBuf []byte) error {
 	)
 }
 
+func List(filesPath string) ([]string, error) {
+	fileList := make([]string, 0, 1000)
+
+	dirs, err := utils.ListDir(filesPath)
+	if err != nil {
+		return nil, fmt.Errorf("error listing files path: %s", err)
+	}
+
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
+		}
+		dirPath := filepath.Join(filesPath, dir.Name())
+
+		files, err := utils.ListDir(dirPath)
+		if err != nil {
+			return nil, fmt.Errorf("error listing file directory \"%s\": %s", dirPath, err)
+		}
+
+		for _, f := range files {
+			fileList = append(fileList, filepath.Join(dirPath, f.Name()))
+		}
+	}
+	return fileList, nil
+}
+
 func Check(path string, h *hash.Hasher) error {
 	// Get expected values
 	expectedHash, expectedSize, err := getDataFromName(filepath.Base(path))
