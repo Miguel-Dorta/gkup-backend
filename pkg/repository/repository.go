@@ -1,31 +1,36 @@
 package repository
 
 import (
-	"github.com/Miguel-Dorta/gkup-backend/api"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/backup"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/check"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/create"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/list"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/restore"
-	"io"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
+	"os"
 )
 
-func Backup(repoPath, snapName string, pathsToBackup []string, bufferSize, threads int, outWriter, errWriter io.Writer) {
-	backup.Backup(repoPath, snapName, pathsToBackup, bufferSize, threads, outWriter, errWriter)
+var (
+	stdout = threadSafe.NewWriter(os.Stdout)
+	stderr = threadSafe.NewWriter(os.Stderr)
+)
+
+func Backup(repoPath, groupName string, paths []string) {
+	backup.Backup(repoPath, groupName, paths, stdout, stderr)
 }
 
-func Check(path string, threads, bufferSize int, outWriter, errWriter io.Writer) {
-	check.Check(path, threads, bufferSize, outWriter, errWriter)
+func Check(repoPath string) {
+	check.Check(repoPath, stdout, stderr)
 }
 
-func Create(path, hashAlgorithm string, errWriter io.Writer) {
-	create.Create(path, hashAlgorithm, errWriter)
+func Create(repoPath string) {
+	create.Create(repoPath, stderr)
 }
 
-func List(path string, outWriter, errWriter io.Writer) {
-	list.List(path, outWriter, errWriter)
+func List(repoPath string) {
+	list.List(repoPath, stdout, stderr)
 }
 
-func Restore(repoPath, restorePath string, bufferSize int, restoreSnap *api.Snapshot, outWriter, errWriter io.Writer) {
-	restore.Restore(repoPath, restorePath, bufferSize, restoreSnap, outWriter, errWriter)
+func Restore(repoPath, restorationPath, snapGroup string, snapTime int64) {
+	restore.Restore(repoPath, restorationPath, snapGroup, snapTime, stdout, stderr)
 }
