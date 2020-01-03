@@ -1,0 +1,8 @@
+module github.com/Miguel-Dorta/gkup-backend
+
+go 1.13
+
+require (
+	github.com/pelletier/go-toml v1.6.0
+	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915
+)
