@@ -4,9 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/hash/checkHash"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots"
-	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/snapshots/custom"
 	"github.com/pelletier/go-toml"
 	"io/ioutil"
 )
@@ -14,6 +11,13 @@ import (
 //TODO add new stuff to tests and comment
 
 const FileName = "settings.toml"
+
+var (
+	// Update when hash/hash.algorithms changes
+	validHashes = []string{"md5", "sha1", "sha256", "sha512", "sha3-256", "sha3-512"}
+	// Update when repository/snapshots changes
+	validSnapshotType = []string{"custom"}
+)
 
 type Settings struct {
 	Version       string `toml:"version"`
@@ -80,14 +84,14 @@ func check(s *Settings) error {
 		return errors.New("buffer_size is too small or nonexistent")
 	}
 
-	if !checkHash.ValidAlgorithm(s.HashAlgorithm) {
+	if !foundInSlice(s.HashAlgorithm, validHashes) {
 		return errors.New("invalid or nonexistent hash_algorithm")
 	}
 
-	if !snapshots.IsValidType(s.SnapshotType) {
+	if !foundInSlice(s.SnapshotType, validSnapshotType) {
 		return errors.New("invalid or nonexistent snapshot_type")
 	}
-	if s.SnapshotType == custom.Type {
+	if s.SnapshotType == validSnapshotType[0] { // Custom type in particular doesn't require DB settings
 		return nil
 	}
 
@@ -106,4 +110,13 @@ func check(s *Settings) error {
 	}
 
 	return nil
+}
+
+func foundInSlice(str string, sl []string) bool {
+	for _, str2 := range sl {
+		if str == str2 {
+			return true
+		}
+	}
+	return false
 }
