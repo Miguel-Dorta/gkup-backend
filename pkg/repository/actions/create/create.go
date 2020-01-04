@@ -12,6 +12,7 @@ import (
 )
 
 // TODO check tests
+// TODO create folders and params!
 
 func Create(path string, errWriter io.Writer) {
 	// Check existence

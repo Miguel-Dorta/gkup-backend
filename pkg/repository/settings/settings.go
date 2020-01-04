@@ -44,7 +44,7 @@ func Read(path string) (*Settings, error) {
 
 	// Parse settings
 	s := new(Settings)
-	if err := toml.Unmarshal(data, &s); err != nil {
+	if err := toml.Unmarshal(data, s); err != nil {
 		return nil, fmt.Errorf("error parsing settings: %w", err)
 	}
 

@@ -9,8 +9,8 @@ import (
 func getArgs() (map[string]interface{}, error) {
 	d := json.NewDecoder(os.Stdin)
 
-	var args map[string]interface{}
-	if err := d.Decode(args); err != nil {
+	args := make(map[string]interface{}, 5)
+	if err := d.Decode(&args); err != nil {
 		return nil, fmt.Errorf("error decoding json: %s", err)
 	}
 	return args, nil
