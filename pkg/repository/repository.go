@@ -15,14 +15,6 @@ var (
 	stderr = threadSafe.NewWriter(os.Stderr)
 )
 
-func Backup(repoPath, groupName string, paths []string) {
-	backup.Backup(repoPath, groupName, paths, stdout, stderr)
-}
-
-func Check(repoPath string) {
-	check.Check(repoPath, stdout, stderr)
-}
-
 func Create(repoPath string) {
 	create.Create(repoPath, stderr)
 }
@@ -31,6 +23,14 @@ func List(repoPath string) {
 	list.List(repoPath, stdout, stderr)
 }
 
-func Restore(repoPath, restorationPath, snapGroup string, snapTime int64) {
-	restore.Restore(repoPath, restorationPath, snapGroup, snapTime, stdout, stderr)
+func Backup(repoPath string, outputTimeInMS int, groupName string, paths []string) {
+	backup.Backup(repoPath, outputTimeInMS, groupName, paths, stdout, stderr)
+}
+
+func Check(repoPath string, outputTimeInMS int) {
+	check.Check(repoPath, outputTimeInMS, stdout, stderr)
+}
+
+func Restore(repoPath string, outputTimeInMS int, restorationPath, snapGroup string, snapTime int64) {
+	restore.Restore(repoPath, outputTimeInMS, restorationPath, snapGroup, snapTime, stdout, stderr)
 }

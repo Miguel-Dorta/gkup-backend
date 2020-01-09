@@ -1,19 +1,19 @@
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-	"os"
-)
-
-func getArgs() (map[string]interface{}, error) {
-	d := json.NewDecoder(os.Stdin)
-
-	args := make(map[string]interface{}, 5)
-	if err := d.Decode(&args); err != nil {
-		return nil, fmt.Errorf("error decoding json: %s", err)
+func getInterface(args map[string]interface{}, k string) interface{} {
+	v, ok := args[k]
+	if !ok {
+		printError(k + " not defined")
 	}
-	return args, nil
+	return v
+}
+
+func getInt(args map[string]interface{}, key string) int {
+	i, ok := getInterface(args, key).(int)
+	if !ok {
+		printError("error parsing " + key)
+	}
+	return i
 }
 
 func getInt64(args map[string]interface{}, key string) int64 {
@@ -24,14 +24,6 @@ func getInt64(args map[string]interface{}, key string) int64 {
 	return i
 }
 
-func getStringSlice(args map[string]interface{}, key string) []string {
-	strs, ok := getInterface(args, key).([]string)
-	if !ok {
-		printError("error parsing " + key)
-	}
-	return strs
-}
-
 func getString(args map[string]interface{}, key string) string {
 	str, ok := getInterface(args, key).(string)
 	if !ok {
@@ -40,10 +32,10 @@ func getString(args map[string]interface{}, key string) string {
 	return str
 }
 
-func getInterface(args map[string]interface{}, k string) interface{} {
-	v, ok := args[k]
+func getStringSlice(args map[string]interface{}, key string) []string {
+	strs, ok := getInterface(args, key).([]string)
 	if !ok {
-		printError(k + " not defined")
+		printError("error parsing " + key)
 	}
-	return v
+	return strs
 }

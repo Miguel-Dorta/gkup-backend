@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-func Backup(repoPath, groupName string, paths []string, outWriter, errWriter io.Writer) {
+func Backup(repoPath string, outputTimeInMS int, groupName string, paths []string, outWriter, errWriter io.Writer) {
 	startTime := time.Now()
-	status := output.NewStatus(4, outWriter)
+	status := output.NewStatus(4, outputTimeInMS, outWriter)
 	defer status.Stop()
 
 	sett, err := settings.Read(filepath.Join(repoPath, settings.FileName))

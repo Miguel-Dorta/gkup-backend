@@ -16,8 +16,8 @@ import (
 
 // TODO rewrite tests
 
-func Restore(repoPath, restorationPath, snapGroup string, snapTime int64, outWriter, errWriter io.Writer) {
-	status := output.NewStatus(2, outWriter)
+func Restore(repoPath string, outputTimeInMS int, restorationPath, snapGroup string, snapTime int64, outWriter, errWriter io.Writer) {
+	status := output.NewStatus(2, outputTimeInMS, outWriter)
 	defer status.Stop()
 
 	sett, err := settings.Read(filepath.Join(repoPath, settings.FileName))

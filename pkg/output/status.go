@@ -9,38 +9,45 @@ import (
 
 type Status struct {
 	info         statusInfo
+	queue        *linkedList
 	quit, exited chan bool
-	m            *sync.Mutex
 	w            io.Writer
+	printMutex   *sync.Mutex
+	m            *sync.Mutex
 }
 
 type statusInfo struct {
-	Steps    int    `json:"steps"`
-	Step     int    `json:"step"`
-	StepName string `json:"step-name"`
-	Parts    int    `json:"parts"`
-	Part     int    `json:"part"`
+	Steps           int    `json:"steps"`
+	Step            int    `json:"step"`
+	StepName        string `json:"step-name"`
+	Parts           int    `json:"parts"` // Can be 0
+	Part            int    `json:"part"`
 }
 
-func NewStatus(totalSteps int, outWriter io.Writer) *Status {
+func NewStatus(totalSteps, outputTimeInMS int, outWriter io.Writer) *Status {
+	if totalSteps < 1 {
+		panic("totalSteps must be >= 1 in status")
+	}
+	if outputTimeInMS < 1 {
+		panic("invalid outputTime for status")
+	}
+
 	s := &Status{
-		info:   statusInfo{
+		info: statusInfo{
 			Steps:    totalSteps,
-			Step:     0,
 			StepName: "Initializing",
-			Parts:    0,
-			Part:     0,
 		},
+		queue:  new(linkedList),
 		quit:   make(chan bool, 1),
 		exited: make(chan bool, 1),
 		w:      outWriter,
 	}
 
 	go func() {
-		seconds := time.NewTicker(time.Second).C
+		outputTicker := time.NewTicker(time.Duration(outputTimeInMS * int(time.Millisecond))).C
 		for {
 			select {
-			case <-seconds:
+			case <-outputTicker:
 				s.print()
 			case <-s.quit:
 				s.print()
@@ -58,25 +65,33 @@ func (s *Status) NewStep(name string, parts int) {
 	s.info.Step++
 	s.info.Parts = parts
 	s.info.Part = 0
+	s.queue.Push(s.info)
 	s.m.Unlock()
 }
 
 func (s *Status) AddPart() {
 	s.m.Lock()
 	s.info.Part++
-	s.m.Unlock()
-}
-
-func (s *Status) Stop() {
-	s.m.Lock()
-	s.quit <- true
-	<- s.exited // Wait for exited to return something
+	s.queue.Push(s.info)
 	s.m.Unlock()
 }
 
 func (s *Status) print() {
 	s.m.Lock()
-	data, _ := json.Marshal(s.info)
-	_, _ = s.w.Write(data)
+	n := s.queue.PopAndReset()
+	s.m.Unlock()
+
+	s.printMutex.Lock() // This is not perfect, but it's improbable that something bad happens. Let's hope!
+	for ; n != nil; n = n.next {
+		data, _ := json.Marshal(n.value)
+		_, _ = s.w.Write(data)
+	}
+	s.printMutex.Unlock()
+}
+
+func (s *Status) Stop() {
+	s.m.Lock()
+	s.quit <- true
+	<-s.exited // Wait for exited channel to return something
 	s.m.Unlock()
 }

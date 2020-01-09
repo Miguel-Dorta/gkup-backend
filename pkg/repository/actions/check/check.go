@@ -15,8 +15,8 @@ import (
 
 // TODO redo tests
 
-func Check(repoPath string, outWriter, errWriter io.Writer) {
-	status := output.NewStatus(0, outWriter)
+func Check(repoPath string, outputTimeInMS int, outWriter, errWriter io.Writer) {
+	status := output.NewStatus(0, outputTimeInMS, outWriter)
 	defer status.Stop()
 
 	sett, err := settings.Read(filepath.Join(repoPath, settings.FileName))
