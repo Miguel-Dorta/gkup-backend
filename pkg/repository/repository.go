@@ -6,6 +6,7 @@ import (
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/create"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/list"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/actions/restore"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/threadSafe"
 	"os"
 )
@@ -15,8 +16,8 @@ var (
 	stderr = threadSafe.NewWriter(os.Stderr)
 )
 
-func Create(repoPath string) {
-	create.Create(repoPath, stderr)
+func Create(repoPath string, s *settings.Settings) {
+	create.Create(repoPath, s, stderr)
 }
 
 func List(repoPath string) {

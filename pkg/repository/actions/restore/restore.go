@@ -3,7 +3,6 @@ package restore
 import (
 	"errors"
 	"fmt"
-	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/output"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/files"
@@ -87,7 +86,7 @@ func checkRestorationPath(path string) error {
 		return fmt.Errorf("error listing restoration path: %s", err)
 	}
 
-	if err = os.MkdirAll(path, pkg.DefaultDirPerm); err != nil {
+	if err = os.MkdirAll(path, 0755); err != nil {
 		return fmt.Errorf("error creating restoration path: %s", err)
 	}
 	return nil

@@ -2,8 +2,6 @@ package create
 
 import (
 	"fmt"
-	"github.com/Miguel-Dorta/gkup-backend/internal"
-	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/fileutils"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"io"
@@ -14,13 +12,13 @@ import (
 // TODO check tests
 // TODO create folders and params!
 
-func Create(path string, errWriter io.Writer) {
+func Create(path string, s *settings.Settings, errWriter io.Writer) {
 	// Check existence
 	if exists, err := fileutils.FileExist(path); err != nil {
 		printError(errWriter, "error checking existence of path \"%s\": %s", path, err)
 		return
 	} else if !exists {
-		if err := os.MkdirAll(path, pkg.DefaultDirPerm); err != nil {
+		if err := os.MkdirAll(path, 0755); err != nil {
 			printError(errWriter, "error creating repo directory in path \"%s\": %s", path, err)
 			return
 		}
@@ -45,19 +43,8 @@ func Create(path string, errWriter io.Writer) {
 	}
 
 	// Create settings
-	if err := settings.Write(filepath.Join(path, settings.FileName), &settings.Settings{
-		Version:       internal.Version,
-		BufferSize:    128 * 1024,
-		HashAlgorithm: "sha256",
-		SnapshotType:  "custom",
-		DB: settings.DB{
-			Host:   "localhost",
-			DBName: "gkup",
-			User:   "user",
-			Pass:   "pass",
-			Port:   3306,
-		},
-	}); err != nil {
+	updateWithValidSettings(s)
+	if err := settings.Write(filepath.Join(path, settings.FileName), s); err != nil {
 		printError(errWriter, "error creating settings file: %s", err)
 		return
 	}

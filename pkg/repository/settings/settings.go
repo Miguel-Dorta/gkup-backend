@@ -3,7 +3,6 @@ package settings
 import (
 	"errors"
 	"fmt"
-	"github.com/Miguel-Dorta/gkup-backend/pkg"
 	"github.com/pelletier/go-toml"
 	"io/ioutil"
 )
@@ -69,7 +68,7 @@ func Write(path string, s *Settings) error {
 	}
 
 	// Write data
-	if err := ioutil.WriteFile(path, data, pkg.DefaultFilePerm); err != nil {
+	if err := ioutil.WriteFile(path, data, 0644); err != nil {
 		return fmt.Errorf("error writing settings in path \"%s\": %w", path, err)
 	}
 	return nil

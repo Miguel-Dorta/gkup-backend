@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Miguel-Dorta/gkup-backend/pkg/repository"
+	"github.com/Miguel-Dorta/gkup-backend/pkg/repository/settings"
 	"os"
 )
 
@@ -15,11 +16,26 @@ type input struct {
 }
 
 const (
+	// Common keys
 	keyOutputTimeInMS = "output-time-ms"
 	keyGroupName = "group"
+
+	// Backup keys
 	keyPaths = "paths"
+
+	// Restore keys
 	keyRestorationPath = "restore-to"
 	keySnapTime = "snapshot-time"
+
+	// Settings keys
+	keyBufferSize = "buffer-size"
+	keyHashAlgorithm = "hash-algorithm"
+	keySnapshotType = "snapshot-type"
+	keyDBHost = "database-host"
+	keyDBPort = "database-port"
+	keyDBName = "database-name"
+	keyDBUser = "database-user"
+	keyDBPass = "database-password"
 )
 
 func getInput() (input, error) {
@@ -43,8 +59,6 @@ func main() {
 	}
 
 	switch in.Action {
-	case "create":
-		repository.Create(in.RepoPath)
 	case "list":
 		repository.List(in.RepoPath)
 	case "backup":
@@ -57,6 +71,21 @@ func main() {
 		repository.Check(
 			in.RepoPath,
 			getInt(in.Args, keyOutputTimeInMS))
+	case "create":
+		repository.Create(
+			in.RepoPath,
+			&settings.Settings{
+				BufferSize:    getOptionalInt(in.Args, keyBufferSize),
+				HashAlgorithm: getOptionalString(in.Args, keyHashAlgorithm),
+				SnapshotType:  getOptionalString(in.Args, keySnapshotType),
+				DB:            settings.DB{
+					Host:   getOptionalString(in.Args, keyDBHost),
+					DBName: getOptionalString(in.Args, keyDBName),
+					User:   getOptionalString(in.Args, keyDBUser),
+					Pass:   getOptionalString(in.Args, keyDBPass),
+					Port:   getOptionalInt(in.Args, keyDBPort),
+				},
+			})
 	case "restore":
 		repository.Restore(
 			in.RepoPath,
