@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	stdout = threadSafe.NewWriter(os.Stdout)
+	stdout = os.Stdout
 	stderr = threadSafe.NewWriter(os.Stderr)
 )
 

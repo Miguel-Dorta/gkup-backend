@@ -1,6 +1,7 @@
 package output
 
 import (
+	"bufio"
 	"encoding/json"
 	"io"
 	"sync"
@@ -11,17 +12,17 @@ type Status struct {
 	info         statusInfo
 	queue        *linkedList
 	quit, exited chan bool
-	w            io.Writer
+	w            *bufio.Writer
 	printMutex   *sync.Mutex
 	m            *sync.Mutex
 }
 
 type statusInfo struct {
-	Steps           int    `json:"steps"`
-	Step            int    `json:"step"`
-	StepName        string `json:"step-name"`
-	Parts           int    `json:"parts"` // Can be 0
-	Part            int    `json:"part"`
+	Steps    int    `json:"steps"`
+	Step     int    `json:"step"`
+	StepName string `json:"step-name"`
+	Parts    int    `json:"parts"` // Can be 0
+	Part     int    `json:"part"`
 }
 
 func NewStatus(totalSteps, outputTimeInMS int, outWriter io.Writer) *Status {
@@ -40,7 +41,7 @@ func NewStatus(totalSteps, outputTimeInMS int, outWriter io.Writer) *Status {
 		queue:  new(linkedList),
 		quit:   make(chan bool, 1),
 		exited: make(chan bool, 1),
-		w:      outWriter,
+		w:      bufio.NewWriterSize(outWriter, 64*1024),
 	}
 
 	go func() {
@@ -86,6 +87,7 @@ func (s *Status) print() {
 		data, _ := json.Marshal(n.value)
 		_, _ = s.w.Write(data)
 	}
+	_ = s.w.Flush()
 	s.printMutex.Unlock()
 }
 
